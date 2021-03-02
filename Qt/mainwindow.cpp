@@ -32,7 +32,7 @@ void MainWindow::recived_data()
     QByteArray data = serial->readAll();
     for(int i=0;i<data.size();i++){
         if(data.at(i)!=0x00) {
-            ui->statusbar->showMessage("Error in comuniction.");
+            ui->statusbar->showMessage("Error in comuniction.",3000);
             serial->close();
 
             timer->stop();
@@ -53,10 +53,10 @@ void MainWindow::on_connect_button_clicked()
     serial->setPortName(ui->serial_port_list->currentText());
 
     if(!serial->open(QIODevice::ReadWrite)) {
-        ui->statusbar->showMessage("Error opening serial port.");
+        ui->statusbar->showMessage("Error opening serial port.",3000);
     }
     else {
-        ui->statusbar->showMessage("Sucesfully opened serial port.");
+        ui->statusbar->showMessage("Sucesfully opened serial port.",3000);
         ui->send_button->setEnabled(true);
         ui->string_input->setEnabled(true);
     }
@@ -65,19 +65,27 @@ void MainWindow::on_connect_button_clicked()
 void MainWindow::on_send_button_clicked()
 {
     if(displaying_string == false){
-        displaying_string = true;
         display_string = ui->string_input->text();
         display_string = display_string.trimmed();
         display_string.append(" ");
+        bool tmp = true;
+        for(int i=0;i<display_string.size();i++){
+            if(display_string.at(i).unicode() > 127) tmp = false;
+        }
+        if(tmp){
+            displaying_string = true;
+            for(int i=0;i<8;i++) framebuffer[i] = 0;
+            current_string_pos = 0;
 
-        for(int i=0;i<8;i++) framebuffer[i] = 0;
-        current_string_pos = 0;
+            timer->start(40);
 
-        timer->start(40);
-
-        ui->send_button->setText("Stop Sending");
-        ui->connect_button->setEnabled(false);
-        ui->serial_port_list->setEnabled(false);
+            ui->send_button->setText("Stop Sending");
+            ui->connect_button->setEnabled(false);
+            ui->serial_port_list->setEnabled(false);
+        }
+        else{
+            ui->statusbar->showMessage("Wrong input string. Only basic ASCI allowed.",3000);
+        }
     }
     else{
         displaying_string = false;
